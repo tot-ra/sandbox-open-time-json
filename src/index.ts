@@ -1,9 +1,16 @@
 import fastify from 'fastify'
 
-const server = fastify()
+const server = fastify({
+  bodyLimit: 1024 * 1048576 // 1GB
+})
 
 server.post('/availability', async (request, reply) => {
-  return 'Hello there! 👋'
+  const { body: json } = request
+
+  console.log({json});
+  // Traverse the JSON object here
+
+  reply.send({ success: true })
 })
 
 server.listen({
