@@ -2,83 +2,133 @@ import { FastifyBaseLogger } from "fastify";
 import parse from "./parser";
 
 const logger = {
-  error: jest.fn()
+  error: jest.fn(),
 } as unknown as FastifyBaseLogger;
 
 it("Simple monday 9-10:30", () => {
-  const result = parse(JSON.stringify({
-    monday: [
-      {
-        type: "open",
-        value: 32400,
-      },
-      {
-        type: "close",
-        value: 37800,
-      },
-    ],
-  }), logger);
+  const result = parse(
+    JSON.stringify({
+      monday: [
+        {
+          type: "open",
+          value: 32400,
+        },
+        {
+          type: "close",
+          value: 37800,
+        },
+      ],
+    }),
+    logger
+  );
 
   expect(result).toEqual(
-`Monday: 9 AM - 10:30 AM
+    `Monday: 9 AM - 10:30 AM
 Tuesday: Closed
 Wednesday: Closed
 Thursday: Closed
 Friday: Closed
 Saturday: Closed
 Sunday: Closed`
-  )
+  );
 });
-
 
 it("Multiple times per day 9-10:30, 11-20", () => {
-  const result = parse(JSON.stringify({
-    monday: [
-      {
-        type: "open",
-        value: 9*60*60,
-      },
-      {
-        type: "close",
-        value: 10*60*60+30*60,
-      },
-      {
-        type: "open",
-        value: 11*60*60,
-      },
-      {
-        type: "close",
-        value: 20*60*60,
-      },
-    ],
-  }), logger);
+  const result = parse(
+    JSON.stringify({
+      monday: [
+        {
+          type: "open",
+          value: 9 * 60 * 60,
+        },
+        {
+          type: "close",
+          value: 10 * 60 * 60 + 30 * 60,
+        },
+        {
+          type: "open",
+          value: 11 * 60 * 60,
+        },
+        {
+          type: "close",
+          value: 20 * 60 * 60,
+        },
+      ],
+    }),
+    logger
+  );
 
   expect(result).toEqual(
-`Monday: 9 AM - 10:30 AM, 11 AM - 8 PM
+    `Monday: 9 AM - 10:30 AM, 11 AM - 8 PM
 Tuesday: Closed
 Wednesday: Closed
 Thursday: Closed
 Friday: Closed
 Saturday: Closed
 Sunday: Closed`
-  )
+  );
 });
 
+it("Multiple days time", () => {
+  const result = parse(
+    JSON.stringify({
+      friday: [
+        {
+          type: "open",
+          value: 18*60*60,
+        },
+      ],
+      saturday: [
+        {
+          type: "close",
+          value: 60*60,
+        },
+        {
+          type: "open",
+          value: 9*60*60,
+        },
+        {
+          type: "close",
+          value: 11*60*60,
+        },
+        {
+          type: "open",
+          value: 16*60*60,
+        },
+        {
+          type: "close",
+          value: 23*60*60,
+        },
+      ],
+    }),
+    logger
+  );
 
-describe('edge cases', ()=>{
+  expect(result).toEqual(
+    `Monday: Closed
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: 6 PM - 1 AM
+Saturday: 9 AM - 11 AM, 4 PM - 11 PM
+Sunday: Closed`
+  );
+});
+
+describe("edge cases", () => {
   it("Empty string should return all days closed", () => {
     const result = parse("", logger);
 
     expect(logger.error).toHaveBeenCalled();
     expect(result).toEqual(
-`Monday: Closed
+      `Monday: Closed
 Tuesday: Closed
 Wednesday: Closed
 Thursday: Closed
 Friday: Closed
 Saturday: Closed
 Sunday: Closed`
-    )
+    );
   });
 
   it("Empty object should return all days closed", () => {
@@ -86,64 +136,69 @@ Sunday: Closed`
     expect(logger.error).not.toHaveBeenCalled();
 
     expect(result).toEqual(
-`Monday: Closed
+      `Monday: Closed
 Tuesday: Closed
 Wednesday: Closed
 Thursday: Closed
 Friday: Closed
 Saturday: Closed
 Sunday: Closed`
-    )
+    );
   });
 
   it("Reverse order close->open time should be valid, as long as time is increasing", () => {
-    const result = parse(JSON.stringify({
-      monday: [
-        {
-          type: "close",
-          value: 37800,
-        },
-        {
-          type: "open",
-          value: 32400,
-        },
-      ],
-    }), logger);
-  
+    const result = parse(
+      JSON.stringify({
+        monday: [
+          {
+            type: "close",
+            value: 37800,
+          },
+          {
+            type: "open",
+            value: 32400,
+          },
+        ],
+      }),
+      logger
+    );
+
     expect(result).toEqual(
-`Monday: 9 AM - 10:30 AM
+      `Monday: 9 AM - 10:30 AM
 Tuesday: Closed
 Wednesday: Closed
 Thursday: Closed
 Friday: Closed
 Saturday: Closed
 Sunday: Closed`
-    )
+    );
   });
-  
+
   it("Seconds and border cases 00:00:01", () => {
-    const result = parse(JSON.stringify({
-      monday: [
-        {
-          type: "open",
-          value: 1,
-        },
-        {
-          type: "close",
-          value: 86399,
-        },
-      ],
-    }), logger);
-  
+    const result = parse(
+      JSON.stringify({
+        monday: [
+          {
+            type: "open",
+            value: 1,
+          },
+          {
+            type: "close",
+            value: 86399,
+          },
+        ],
+      }),
+      logger
+    );
+
     expect(result).toEqual(
-`Monday: 12:00:01 AM - 11:59:59 PM
+      `Monday: 12:00:01 AM - 11:59:59 PM
 Tuesday: Closed
 Wednesday: Closed
 Thursday: Closed
 Friday: Closed
 Saturday: Closed
 Sunday: Closed`
-    )
+    );
   });
 });
-

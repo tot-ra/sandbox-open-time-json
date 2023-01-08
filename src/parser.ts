@@ -37,7 +37,7 @@ function aggregateTimeRangesByWeekDay(
   const dayMap: Map<WeekDay, FormattedTimeRange[]> = new Map();
 
   for (let row of data) {
-    let dayKey = Math.floor(row.from / DAY_IN_SEC);
+    let dayKey = row.fromDay;
     let weekday = weekdays[dayKey];
     let timeRanges = dayMap.get(weekday);
 
@@ -46,11 +46,7 @@ function aggregateTimeRangesByWeekDay(
     }
 
     // todo needs improvement for multiple day ranges
-    timeRanges.push(
-      `${formatTime(row.from - dayKey * DAY_IN_SEC)} - ${formatTime(
-        row.to - dayKey * DAY_IN_SEC
-      )}`
-    );
+    timeRanges.push(`${formatTime(row.from)} - ${formatTime(row.to)}`);
 
     dayMap.set(weekday, timeRanges);
   }
@@ -60,47 +56,59 @@ function aggregateTimeRangesByWeekDay(
 
 function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
   const result: TimeRange[] = [];
+  let currentRange: TimeRangeTemporary = {
+    from: null,
+    to: null,
+    fromDay: null,
+    toDay: null,
+  };
 
   for (let dayKey = 0; dayKey < weekdays.length; dayKey++) {
-    const weekday = weekdays[dayKey];
-    const openHoursParts: TimeRangePartial[] = data[weekday];
+      const weekday = weekdays[dayKey];
+      const openHoursParts: TimeRangePartial[] = data[weekday];
 
-    // todo handle case when previous day is still open
     // empty input - skip a row
     if (!openHoursParts || Object.keys(openHoursParts).length === 0) {
       continue;
     }
 
-    const currentRange: TimeRangeTemporary = {
-      from: null,
-      to: null,
-    };
-
     for (const rangePart of openHoursParts) {
       if (rangePart.type === "open") {
-        currentRange.from = rangePart.value + dayKey * 24 * 60 * 60;
+        currentRange = {
+          ...currentRange,
+          from: rangePart.value,
+          fromDay: dayKey,
+        };
       }
 
       if (rangePart.type === "close") {
-        currentRange.to = rangePart.value + dayKey * 24 * 60 * 60;
+        currentRange = {
+          ...currentRange,
+          to: rangePart.value,
+          toDay: dayKey,
+        };
       }
 
       if (
         currentRange.to &&
         currentRange.from &&
-        currentRange.from < currentRange.to
+        // @ts-ignore
+        DAY_IN_SEC*(currentRange.fromDay+1) + currentRange.from < currentRange.to + DAY_IN_SEC*(currentRange.toDay+1)
       ) {
-        result.push({...currentRange} as TimeRange);
 
-        currentRange.to = null;
-        currentRange.from = null;
+        result.push({ ...currentRange } as TimeRange);
+
+        currentRange = {
+          from: null,
+          to: null,
+          fromDay: null,
+          toDay: null,
+        };
       }
     }
   }
 
-//   console.log({result});
   return result;
-  //.join("\n");
 }
 
 const weekdays: WeekDay[] = [
@@ -117,6 +125,8 @@ const weekdays: WeekDay[] = [
 type TimeRangeTemporary = {
   from: number | null;
   to: number | null;
+  fromDay: number | null;
+  toDay: number | null;
 };
 
 type FormattedTimeRange = string;
@@ -124,6 +134,8 @@ type FormattedTimeRange = string;
 type TimeRange = {
   from: number;
   to: number;
+  fromDay: number;
+  toDay: number;
 };
 
 type TimeRangePartial = {
