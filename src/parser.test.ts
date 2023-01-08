@@ -75,29 +75,29 @@ it("Multiple days time", () => {
       friday: [
         {
           type: "open",
-          value: 18*60*60,
+          value: 18 * 60 * 60,
         },
       ],
       saturday: [
         {
           type: "close",
-          value: 60*60,
+          value: 60 * 60,
         },
         {
           type: "open",
-          value: 9*60*60,
+          value: 9 * 60 * 60,
         },
         {
           type: "close",
-          value: 11*60*60,
+          value: 11 * 60 * 60,
         },
         {
           type: "open",
-          value: 16*60*60,
+          value: 16 * 60 * 60,
         },
         {
           type: "close",
-          value: 23*60*60,
+          value: 23 * 60 * 60,
         },
       ],
     }),
@@ -112,6 +112,76 @@ Thursday: Closed
 Friday: 6 PM - 1 AM
 Saturday: 9 AM - 11 AM, 4 PM - 11 PM
 Sunday: Closed`
+  );
+});
+
+it("requirements full example", () => {
+  const result = parse(
+    JSON.stringify({
+      monday: [],
+      tuesday: [
+        {
+          type: "open",
+          value: 36000,
+        },
+        {
+          type: "close",
+          value: 64800,
+        },
+      ],
+      wednesday: [],
+      thursday: [
+        {
+          type: "open",
+          value: 37800,
+        },
+        {
+          type: "close",
+          value: 64800,
+        },
+      ],
+      friday: [
+        {
+          type: "open",
+          value: 36000,
+        },
+      ],
+      saturday: [
+        {
+          type: "close",
+          value: 3600,
+        },
+        {
+          type: "open",
+          value: 36000,
+        },
+      ],
+      sunday: [
+        {
+          type: "close",
+          value: 3600,
+        },
+        {
+          type: "open",
+          value: 43200,
+        },
+        {
+          type: "close",
+          value: 75600,
+        },
+      ],
+    }),
+    logger
+  );
+
+  expect(result).toEqual(
+    `Monday: Closed
+Tuesday: 10 AM - 6 PM
+Wednesday: Closed
+Thursday: 10:30 AM - 6 PM
+Friday: 10 AM - 1 AM
+Saturday: 10 AM - 1 AM
+Sunday: 12 PM - 9 PM`
   );
 });
 
