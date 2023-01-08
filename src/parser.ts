@@ -68,12 +68,12 @@ function renderOpeningHours(data: OpenDaysHierarchy): string {
             currentRange.from = rangePart.value;
         }
         
-        if (currentRange.from !== null && rangePart.type === "close") {
+        if (rangePart.type === "close") {
             currentRange.to = rangePart.value;
+        }
 
-            if(currentRange.from < currentRange.to){
-                result.push(`${outputDay}: ${formatTime(currentRange.from)} - ${formatTime(currentRange.to)}`)
-            }
+        if(currentRange.to && currentRange.from && currentRange.from < currentRange.to){
+            result.push(`${outputDay}: ${formatTime(currentRange.from)} - ${formatTime(currentRange.to)}`)
 
             currentRange.to = null;
             currentRange.from = null;
