@@ -1,4 +1,5 @@
 import { FastifyBaseLogger } from "fastify";
+import { formatTime } from "./formatTime";
 
 export default function parse(txt: unknown, logger: FastifyBaseLogger): string {
   let rows;
@@ -13,14 +14,14 @@ export default function parse(txt: unknown, logger: FastifyBaseLogger): string {
 }
 
 const weekdays: WeekDay[] = [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-  ];
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
 
 // types
 type OpenHours = {
@@ -46,7 +47,8 @@ function renderOpeningHours(data: OpenDaysHierarchy): string {
 
   for (let weekday of weekdays) {
     const openHoursParts: OpenHours[] = data[weekday];
-    const outputDay: string = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    const outputDay: string =
+      weekday.charAt(0).toUpperCase() + weekday.slice(1);
 
     // todo handle case when previous day is still open
     // empty input - skip a row
@@ -56,38 +58,38 @@ function renderOpeningHours(data: OpenDaysHierarchy): string {
     }
 
     const currentRange: {
-        from: number|null,
-        to: number|null
+      from: number | null;
+      to: number | null;
     } = {
-        from: null,
-        to: null
+      from: null,
+      to: null,
     };
 
     for (const rangePart of openHoursParts) {
-        if (rangePart.type === "open") {
-            currentRange.from = rangePart.value;
-        }
-        
-        if (rangePart.type === "close") {
-            currentRange.to = rangePart.value;
-        }
+      if (rangePart.type === "open") {
+        currentRange.from = rangePart.value;
+      }
 
-        if(currentRange.to && currentRange.from && currentRange.from < currentRange.to){
-            result.push(`${outputDay}: ${formatTime(currentRange.from)} - ${formatTime(currentRange.to)}`)
+      if (rangePart.type === "close") {
+        currentRange.to = rangePart.value;
+      }
 
-            currentRange.to = null;
-            currentRange.from = null;
-        }
+      if (
+        currentRange.to &&
+        currentRange.from &&
+        currentRange.from < currentRange.to
+      ) {
+        result.push(
+          `${outputDay}: ${formatTime(currentRange.from)} - ${formatTime(
+            currentRange.to
+          )}`
+        );
+
+        currentRange.to = null;
+        currentRange.from = null;
+      }
     }
   }
 
   return result.join("\n");
-}
-
-function formatTime(timestamp: number): string {
-  return (new Date(timestamp * 1000).toLocaleTimeString([], {
-    timeZone: "UTC",
-    hour: "numeric",
-    minute: "2-digit",
-  })).replace(':00','');
 }
