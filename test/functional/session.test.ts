@@ -1,4 +1,5 @@
 import axios from "axios";
+import 'jest';
 
 describe("POST http://localhost:1234/availability", () => {
   it("should return 200 http status", async () => {
@@ -14,6 +15,11 @@ describe("POST http://localhost:1234/availability", () => {
         },
       ],
     });
+
+    console.log(response.data);
     expect(response.status).toEqual(200);
+    expect(response.data).toEqual({
+      
+    });
   });
 });

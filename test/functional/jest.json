@@ -2,10 +2,10 @@
   "rootDir": "../../",
   "transform": {
     "^.+\\.(ts)$": ["ts-jest",{
-      "tsconfig": "./test/tsconfig.test.json"
+      "tsconfig": "<rootDir>/test/tsconfig.test.json"
     }]
   },
   "testMatch": [
-    "<rootDir>/**/test/**/*.spec.(ts|js)"
+    "<rootDir>/**/test/**/*.test.(ts|js)"
   ]
 }

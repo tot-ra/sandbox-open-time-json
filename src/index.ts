@@ -1,16 +1,14 @@
-import fastify from 'fastify'
+import fastify, { FastifyReply, FastifyRequest } from 'fastify'
+
+import parse from './parser';
 
 const server = fastify({
+  logger: true,
   bodyLimit: 1024 * 1048576 // 1GB
 })
 
-server.post('/availability', async (request, reply) => {
-  const { body: json } = request
-
-  console.log({json});
-  // Traverse the JSON object here
-
-  reply.send({ success: true })
+server.post('/availability', async (request: FastifyRequest, reply: FastifyReply) => {
+  reply.send(parse(request?.body, request.log))
 })
 
 server.listen({

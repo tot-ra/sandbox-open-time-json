@@ -4,7 +4,7 @@
   "restoreMocks": true,
   "transform": {
     "^.+\\.(ts)$": ["ts-jest", {
-      "tsconfig": "./test/tsconfig.test.json"
+      "tsconfig": "<rootDir>/test/tsconfig.test.json"
     }]
   },
   "testMatch": [
