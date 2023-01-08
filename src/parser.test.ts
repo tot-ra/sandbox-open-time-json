@@ -31,38 +31,38 @@ Sunday: Closed`
 });
 
 
-// it("Simple monday 9-10:30, 11-20", () => {
-//   const result = parse(JSON.stringify({
-//     monday: [
-//       {
-//         type: "open",
-//         value: 32400,
-//       },
-//       {
-//         type: "close",
-//         value: 37800,
-//       },
-//       {
-//         type: "open",
-//         value: 39600,
-//       },
-//       {
-//         type: "close",
-//         value: 72000,
-//       },
-//     ],
-//   }), logger);
+it("Multiple times per day 9-10:30, 11-20", () => {
+  const result = parse(JSON.stringify({
+    monday: [
+      {
+        type: "open",
+        value: 9*60*60,
+      },
+      {
+        type: "close",
+        value: 10*60*60+30*60,
+      },
+      {
+        type: "open",
+        value: 11*60*60,
+      },
+      {
+        type: "close",
+        value: 20*60*60,
+      },
+    ],
+  }), logger);
 
-//   expect(result).toEqual(
-// `Monday: 9 AM - 10:30 AM, 11 AM - 8 PM
-// Tuesday: Closed
-// Wednesday: Closed
-// Thursday: Closed
-// Friday: Closed
-// Saturday: Closed
-// Sunday: Closed`
-//   )
-// });
+  expect(result).toEqual(
+`Monday: 9 AM - 10:30 AM, 11 AM - 8 PM
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: Closed`
+  )
+});
 
 
 describe('edge cases', ()=>{
