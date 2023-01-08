@@ -8,9 +8,21 @@ export default function parse(txt: unknown, logger: FastifyBaseLogger): string {
     rows = [];
     logger.error(e);
   }
-  return renderOpeningHours(rows as OpenDays);
+
+  return renderOpeningHours(rows as OpenDaysHierarchy);
 }
 
+const weekdays: WeekDay[] = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    "sunday",
+  ];
+
+// types
 type OpenHours = {
   type: "open" | "close";
   value: number;
@@ -25,33 +37,57 @@ type WeekDay =
   | "saturday"
   | "sunday";
 
-type OpenDays = {
+type OpenDaysHierarchy = {
   [key in WeekDay]: OpenHours[];
 };
 
-function renderOpeningHours(data: OpenDays): string {
-  const weekdays: WeekDay[] = [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-  ];
-
+function renderOpeningHours(data: OpenDaysHierarchy): string {
   const result: any[] = [];
 
   for (let weekday of weekdays) {
-    const hours: OpenHours[] = data[weekday];
-    const day = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    const openHoursParts: OpenHours[] = data[weekday];
+    const outputDay: string = weekday.charAt(0).toUpperCase() + weekday.slice(1);
 
-    if (!hours || Object.keys(hours).length === 0) {
-      result.push(`${day}: Closed`);
+    // todo handle case when previous day is still open
+    // empty input - skip a row
+    if (!openHoursParts || Object.keys(openHoursParts).length === 0) {
+      result.push(`${outputDay}: Closed`);
       continue;
     }
 
+    const currentRange: {
+        from: number|null,
+        to: number|null
+    } = {
+        from: null,
+        to: null
+    };
+
+    for (const rangePart of openHoursParts) {
+        if (rangePart.type === "open") {
+            currentRange.from = rangePart.value;
+        }
+        
+        if (currentRange.from !== null && rangePart.type === "close") {
+            currentRange.to = rangePart.value;
+
+            if(currentRange.from < currentRange.to){
+                result.push(`${outputDay}: ${formatTime(currentRange.from)} - ${formatTime(currentRange.to)}`)
+            }
+
+            currentRange.to = null;
+            currentRange.from = null;
+        }
+    }
   }
 
   return result.join("\n");
+}
+
+function formatTime(timestamp: number): string {
+  return (new Date(timestamp * 1000).toLocaleTimeString([], {
+    timeZone: "UTC",
+    hour: "numeric",
+    minute: "2-digit",
+  })).replace(':00','');
 }

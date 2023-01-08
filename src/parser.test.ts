@@ -1,11 +1,37 @@
 import { FastifyBaseLogger } from "fastify";
 import parse from "./parser";
 
-describe('edge cases', ()=>{
-  const logger = {
-    error: jest.fn()
-  } as unknown as FastifyBaseLogger;
+const logger = {
+  error: jest.fn()
+} as unknown as FastifyBaseLogger;
 
+it("Simple monday 9-10:30", () => {
+  const result = parse(JSON.stringify({
+    monday: [
+      {
+        type: "open",
+        value: 32400,
+      },
+      {
+        type: "close",
+        value: 37800,
+      },
+    ],
+  }), logger);
+
+  expect(result).toEqual(
+`Monday: 9 AM - 10:30 AM
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: Closed`
+  )
+});
+
+
+describe('edge cases', ()=>{
   it("Empty string should return all days closed", () => {
     const result = parse("", logger);
 
@@ -36,21 +62,3 @@ Sunday: Closed`
     )
   });
 });
-
-
-// it("Simple one day", () => {
-//   const result = parse(JSON.stringify({
-//     monday: [
-//       {
-//         type: "open",
-//         value: 32400,
-//       },
-//       {
-//         type: "close",
-//         value: 72000,
-//       },
-//     ],
-//   }));
-
-//   expect(result).toEqual("Mondays - 9 AM to 8 PM")
-// });
