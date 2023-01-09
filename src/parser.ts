@@ -63,9 +63,17 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
     toDay: null,
   };
 
+  // possible element in case of sunday -> monday loop
+  let loopRange: TimeRangeTemporary = {
+    from: null,
+    to: null,
+    fromDay: null,
+    toDay: null,
+  };
+
   for (let dayKey = 0; dayKey < weekdays.length; dayKey++) {
-      const weekday = weekdays[dayKey];
-      const openHoursParts: TimeRangePartial[] = data[weekday];
+    const weekday = weekdays[dayKey];
+    const openHoursParts: TimeRangePartial[] = data[weekday];
 
     // empty input - skip a row
     if (!openHoursParts || Object.keys(openHoursParts).length === 0) {
@@ -87,24 +95,46 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
           to: rangePart.value,
           toDay: dayKey,
         };
+
+        // if first day of the week starts with close date
+        // most likely there is a loop
+        if (result.length === 0 && currentRange.from ===null) {
+          loopRange = {
+            to: rangePart.value,
+            toDay: dayKey,
+            from: null,
+            fromDay: null
+          };
+        }
       }
 
-      if (
-        currentRange.to &&
-        currentRange.from &&
-        // @ts-ignore
-        DAY_IN_SEC*(currentRange.fromDay+1) + currentRange.from < currentRange.to + DAY_IN_SEC*(currentRange.toDay+1)
-      ) {
+      if (currentRange.to && currentRange.from) {
+        const isIncreasingTimeRange: boolean =
+          //@ts-ignore
+          DAY_IN_SEC * (currentRange.fromDay + 1) + currentRange.from <
+          //@ts-ignore
+          currentRange.to + DAY_IN_SEC * (currentRange.toDay + 1);
 
-        result.push({ ...currentRange } as TimeRange);
+        if (isIncreasingTimeRange) {
+          result.push({ ...currentRange } as TimeRange);
 
-        currentRange = {
-          from: null,
-          to: null,
-          fromDay: null,
-          toDay: null,
-        };
+          currentRange = {
+            from: null,
+            to: null,
+            fromDay: null,
+            toDay: null,
+          };
+        }
       }
+    }
+
+    if (loopRange.to !== null && currentRange.from !== null) {
+      result.push({
+        to: loopRange.to,
+        toDay: loopRange.toDay,
+        from: currentRange.from,
+        fromDay: currentRange.fromDay,
+      } as TimeRange);
     }
   }
 

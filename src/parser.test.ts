@@ -271,4 +271,44 @@ Saturday: Closed
 Sunday: Closed`
     );
   });
+
+  it('Week loop',()=>{
+    const result = parse(
+      JSON.stringify({
+        monday: [
+          {
+            type: "close",
+            value: 10*60*60,
+          },
+
+
+          {
+            type: "open",
+            value: 18*60*60,
+          },
+          {
+            type: "close",
+            value: 19*60*60,
+          },
+        ],
+        sunday: [
+          {
+            type: "open",
+            value: 23*60*60,
+          },
+        ]
+      }),
+      logger
+    );
+  
+    expect(result).toEqual(
+    `Monday: 6 PM - 7 PM
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: 11 PM - 10 AM`
+  );
+  })
 });
