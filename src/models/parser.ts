@@ -3,15 +3,7 @@ import { formatTime } from "./formatTime";
 
 const DAY_IN_SEC = 24 * 60 * 60;
 
-export default function parse(txt: unknown, logger: FastifyBaseLogger): string {
-  let rows;
-  try {
-    rows = JSON.parse(txt as string);
-  } catch (e) {
-    rows = [];
-    logger.error(e);
-  }
-
+export default function parse(rows: unknown): string {
   return printWeekDayTimeMap(
     aggregateTimeRangesByWeekDay(
       joinSequentialRanges(
@@ -24,15 +16,17 @@ export default function parse(txt: unknown, logger: FastifyBaseLogger): string {
 }
 
 function sortAndFilterInput(data: OpenDaysHierarchy): OpenDaysHierarchy {
-  for (let weekday of weekdays) {
+  weekdays.forEach(weekday => {
     let openHoursParts: TimeRangePartial[] = data[weekday];
     // empty input - skip a row
     if (!openHoursParts || Object.keys(openHoursParts).length === 0) {
-      continue;
+      return;
     }
     // sort open/close time in case its not sorted properly
     data[weekday].sort((a, b) => a.value - b.value);
 
+    // don't use .filter in case data is too large
+    // no need to create new copy, cleanup existing structure
     for (let key = 0; key < openHoursParts.length; key++) {
       let row = openHoursParts[key];
       if (row.value < 0 || row.value >= DAY_IN_SEC) {
@@ -41,7 +35,7 @@ function sortAndFilterInput(data: OpenDaysHierarchy): OpenDaysHierarchy {
     }
 
     data[weekday] = openHoursParts;
-  }
+  });
 
   return data;
 }

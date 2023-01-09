@@ -5,6 +5,7 @@
       "tsconfig": "<rootDir>/test/tsconfig.test.json"
     }]
   },
+  "maxWorkers": 1,
   "testMatch": [
     "<rootDir>/**/test/**/*.test.(ts|js)"
   ]

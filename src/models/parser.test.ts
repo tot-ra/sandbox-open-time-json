@@ -1,13 +1,8 @@
-import { FastifyBaseLogger } from "fastify";
 import parse from "./parser";
-
-const logger = {
-  error: jest.fn(),
-} as unknown as FastifyBaseLogger;
 
 it("Simple monday 9-10:30", () => {
   const result = parse(
-    JSON.stringify({
+    {
       monday: [
         {
           type: "open",
@@ -18,8 +13,7 @@ it("Simple monday 9-10:30", () => {
           value: 37800,
         },
       ],
-    }),
-    logger
+    }
   );
 
   expect(result).toEqual(
@@ -35,7 +29,7 @@ Sunday: Closed`
 
 it("Multiple times per day 9-10:30, 11-20", () => {
   const result = parse(
-    JSON.stringify({
+    {
       monday: [
         {
           type: "open",
@@ -54,8 +48,7 @@ it("Multiple times per day 9-10:30, 11-20", () => {
           value: 20 * 60 * 60,
         },
       ],
-    }),
-    logger
+    }
   );
 
   expect(result).toEqual(
@@ -71,7 +64,7 @@ Sunday: Closed`
 
 it("Multiple days time", () => {
   const result = parse(
-    JSON.stringify({
+    {
       friday: [
         {
           type: "open",
@@ -100,8 +93,7 @@ it("Multiple days time", () => {
           value: 23 * 60 * 60,
         },
       ],
-    }),
-    logger
+    }
   );
 
   expect(result).toEqual(
@@ -117,8 +109,7 @@ Sunday: Closed`
 
 describe("logical edge cases", () => {
   it("Reverse order close->open time should be valid, as long as time is increasing", () => {
-    const result = parse(
-      JSON.stringify({
+    const result = parse({
         monday: [
           {
             type: "close",
@@ -129,8 +120,7 @@ describe("logical edge cases", () => {
             value: 32400,
           },
         ],
-      }),
-      logger
+      }
     );
 
     expect(result).toEqual(
@@ -145,8 +135,7 @@ Sunday: Closed`
   });
 
   it("Reverse order close->open, multiple values", () => {
-    const result = parse(
-      JSON.stringify({
+    const result = parse({
         monday: [
           {
             type: "close",
@@ -165,8 +154,7 @@ Sunday: Closed`
             value: 3 * 60 * 60,
           },
         ],
-      }),
-      logger
+      }
     );
 
     expect(result).toEqual(
@@ -181,8 +169,7 @@ Sunday: Closed`
   });
 
   it("duplicates are ignored", () => {
-    const result = parse(
-      JSON.stringify({
+    const result = parse({
         monday: [
           {
             type: "close",
@@ -197,8 +184,7 @@ Sunday: Closed`
             value: 1 * 60 * 60,
           },
         ],
-      }),
-      logger
+      }
     );
 
     expect(result).toEqual(
@@ -213,8 +199,7 @@ Sunday: Closed`
   });
 
   it("joining time", () => {
-    const result = parse(
-      JSON.stringify({
+    const result = parse({
         monday: [
           {
             type: "open",
@@ -241,8 +226,7 @@ Sunday: Closed`
             value: 4 * 60 * 60,
           },
         ],
-      }),
-      logger
+      }
     );
 
     expect(result).toEqual(
@@ -257,8 +241,7 @@ Sunday: Closed`
   });
 
   it("Seconds and border cases 00:00:01", () => {
-    const result = parse(
-      JSON.stringify({
+    const result = parse({
         monday: [
           {
             type: "open",
@@ -269,8 +252,7 @@ Sunday: Closed`
             value: 86399,
           },
         ],
-      }),
-      logger
+      }
     );
 
     expect(result).toEqual(
@@ -285,8 +267,7 @@ Sunday: Closed`
   });
 
   it("Week loop", () => {
-    const result = parse(
-      JSON.stringify({
+    const result = parse({
         monday: [
           {
             type: "close",
@@ -308,8 +289,7 @@ Sunday: Closed`
             value: 23 * 60 * 60,
           },
         ],
-      }),
-      logger
+      }
     );
 
     expect(result).toEqual(
@@ -333,24 +313,9 @@ Friday: Closed
 Saturday: Closed
 Sunday: Closed`;
 
-  it("Invalid JSON should return all days closed", () => {
-    const result = parse("{", logger);
-
-    expect(logger.error).toHaveBeenCalled();
-    expect(result).toEqual(allClosed);
-  });
-
-  it("Empty string should return all days closed", () => {
-    const result = parse("", logger);
-
-    expect(logger.error).toHaveBeenCalled();
-    expect(result).toEqual(allClosed);
-  });
 
   it("Empty object should return all days closed", () => {
-    const result = parse(JSON.stringify({}), logger);
-    expect(logger.error).not.toHaveBeenCalled();
-
+    const result = parse({});
     expect(result).toEqual(
       `Monday: Closed
 Tuesday: Closed
@@ -363,48 +328,45 @@ Sunday: Closed`
   });
 
   it("Day without close time, should return all days closed", () => {
-    const result = parse(JSON.stringify({
+    const result = parse({
       monday: [
         {
           type: "open",
           value: 32400,
         },
       ],
-    }), logger);
-    expect(logger.error).not.toHaveBeenCalled();
+    });
 
     expect(result).toEqual(allClosed);
   });
 
   it("Day without close time, should return all days closed", () => {
-    const result = parse(JSON.stringify({
+    const result = parse({
       monday: [
         {
           type: "open",
           value: 32400,
         },
       ],
-    }), logger);
-    expect(logger.error).not.toHaveBeenCalled();
+    });
     expect(result).toEqual(allClosed);
   });
 
   it("Day without open time, should return all days closed", () => {
-    const result = parse(JSON.stringify({
+    const result = parse({
       monday: [
         {
           type: "close",
           value: 32400,
         },
       ],
-    }), logger);
-    expect(logger.error).not.toHaveBeenCalled();
+    });
     expect(result).toEqual(allClosed);
   });
 
 
   it("Day with negative open time or overflow time returns all days closed", () => {
-    const result = parse(JSON.stringify({
+    const result = parse({
       monday: [
         {
           type: "open",
@@ -415,8 +377,7 @@ Sunday: Closed`
           value: Number.MAX_VALUE,
         },
       ],
-    }), logger);
-    expect(logger.error).not.toHaveBeenCalled();
+    });
     expect(result).toEqual(allClosed);
   });
 });
@@ -424,8 +385,7 @@ Sunday: Closed`
 describe("performance", () => {
   it("requirements full example should run in under 10 ms", () => {
     const [result, elapsedTimeMs] = measureTime(() =>
-      parse(
-        JSON.stringify({
+      parse({
           monday: [],
           tuesday: [
             {
@@ -478,8 +438,7 @@ describe("performance", () => {
               value: 75600,
             },
           ],
-        }),
-        logger
+        }
       )
     );
 
@@ -510,8 +469,7 @@ Sunday: 12 PM - 9 PM`
     }
 
     const [result, elapsedTimeMs] = measureTime(() =>
-      parse(
-        JSON.stringify({
+      parse({
           monday: freakyDay,
           tuesday: freakyDay,
           wednesday: freakyDay,
@@ -519,8 +477,7 @@ Sunday: 12 PM - 9 PM`
           friday: freakyDay,
           saturday: freakyDay,
           sunday: freakyDay,
-        }),
-        logger
+        }
       )
     );
 

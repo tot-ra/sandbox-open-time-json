@@ -1,0 +1,10 @@
+version: '3'
+services:
+  sandbox-open-time-json:
+    image: node:16-alpine
+    command: node /app/dist/index.js
+    ports:
+      - 1234:1234
+    volumes:
+      - .:/app/
+    restart: always

@@ -16,10 +16,13 @@ describe("POST http://localhost:1234/availability", () => {
       ],
     });
 
-    console.log(response.data);
     expect(response.status).toEqual(200);
-    expect(response.data).toEqual({
-      
-    });
+    expect(response.data).toEqual(`Monday: 9 AM - 8 PM
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: Closed`);
   });
 });
