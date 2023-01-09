@@ -1,5 +1,7 @@
 # sandbox-open-time-json
-Opening Hours JSON API
+Opening Hours API. Takes JSON and returns human-readable result in 12h format.
+
+![](./docs/insomnia.png)
 
 ## Installation & Usage
 ```sh
