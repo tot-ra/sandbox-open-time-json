@@ -250,6 +250,82 @@ Sunday: Closed`
     );
   });
 
+  it("duplicates are ignored", () => {
+    const result = parse(
+      JSON.stringify({
+        monday: [
+          {
+            type: "close",
+            value: 2*60*60,
+          },
+          {
+            type: "open",
+            value: 1*60*60,
+          },
+          {
+            type: "open",
+            value: 1*60*60,
+          },
+        ],
+      }),
+      logger
+    );
+
+    expect(result).toEqual(
+      `Monday: 1 AM - 2 AM
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: Closed`
+    );
+  });
+
+  it("joining time", () => {
+    const result = parse(
+      JSON.stringify({
+        monday: [
+          {
+            type: "open",
+            value: 1*60*60,
+          },
+          {
+            type: "close",
+            value: 2*60*60,
+          },
+          {
+            type: "open",
+            value: 2*60*60,
+          },
+          {
+            type: "close",
+            value: 3*60*60,
+          },
+          {
+            type: "open",
+            value: 3*60*60,
+          },
+          {
+            type: "close",
+            value: 4*60*60,
+          },
+        ],
+      }),
+      logger
+    );
+
+    expect(result).toEqual(
+      `Monday: 1 AM - 4 AM
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: Closed`
+    );
+  });
+
   it("Seconds and border cases 00:00:01", () => {
     const result = parse(
       JSON.stringify({

@@ -14,53 +14,15 @@ export default function parse(txt: unknown, logger: FastifyBaseLogger): string {
 
   return printWeekDayTimeMap(
     aggregateTimeRangesByWeekDay(
-        extractTimeRanges(
-            sortInputHierarchy(
-                rows as OpenDaysHierarchy
-            )
+        joinSequentialRanges(
+            extractUniqueLoopableTimeRanges(
+                sortInput(rows as OpenDaysHierarchy))
         )
     )
   );
 }
 
-function printWeekDayTimeMap(data: Map<WeekDay, FormattedTimeRange[]>): string {
-  const result = [];
-
-  for (let weekday of weekdays) {
-    const outputDay: string =
-      weekday.charAt(0).toUpperCase() + weekday.slice(1);
-    let times = data.get(weekday);
-
-    result.push(`${outputDay}: ${times ? times.join(", ") : "Closed"}`);
-  }
-
-  return result.join("\n");
-}
-
-function aggregateTimeRangesByWeekDay(
-  data: TimeRange[]
-): Map<WeekDay, FormattedTimeRange[]> {
-  const dayMap: Map<WeekDay, FormattedTimeRange[]> = new Map();
-
-  for (let row of data) {
-    let dayKey = row.fromDay;
-    let weekday = weekdays[dayKey];
-    let timeRanges = dayMap.get(weekday);
-
-    if (!timeRanges) {
-      timeRanges = [];
-    }
-
-    // todo needs improvement for multiple day ranges
-    timeRanges.push(`${formatTime(row.from)} - ${formatTime(row.to)}`);
-
-    dayMap.set(weekday, timeRanges);
-  }
-
-  return dayMap;
-}
-
-function sortInputHierarchy(data: OpenDaysHierarchy): OpenDaysHierarchy {
+function sortInput(data: OpenDaysHierarchy): OpenDaysHierarchy {
   for (let weekday of weekdays) {
     let openHoursParts: TimeRangePartial[] = data[weekday];
     // empty input - skip a row
@@ -74,8 +36,10 @@ function sortInputHierarchy(data: OpenDaysHierarchy): OpenDaysHierarchy {
   return data;
 }
 
-function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
-  const result: TimeRange[] = [];
+function extractUniqueLoopableTimeRanges(
+  data: OpenDaysHierarchy
+): TimeRangeMap {
+  const result: TimeRangeMap = new Map();
   let currentRange: TimeRangeTemporary = {
     from: null,
     to: null,
@@ -91,7 +55,7 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
     toDay: null,
   };
 
-  for (let dayKey = 0; dayKey < weekdays.length; dayKey++) {
+  for (let dayKey:WeekDayIndex = 0; dayKey < weekdays.length; dayKey++) {
     const weekday = weekdays[dayKey];
     let openHoursParts: TimeRangePartial[] = data[weekday];
 
@@ -99,9 +63,6 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
     if (!openHoursParts || Object.keys(openHoursParts).length === 0) {
       continue;
     }
-
-    // sort open/close time in case its not sorted properly
-    openHoursParts.sort((a, b) => a.value - b.value);
 
     for (const rangePart of openHoursParts) {
       if (rangePart.type === "open") {
@@ -121,7 +82,7 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
 
         // if first day of the week starts with close date
         // most likely there is a loop
-        if (result.length === 0 && currentRange.from === null) {
+        if (result.size === 0 && currentRange.from === null) {
           loopRange = {
             to: rangePart.value,
             toDay: dayKey,
@@ -131,7 +92,11 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
         }
       }
 
-      if (currentRange.to && currentRange.from) {
+      if (
+        currentRange.to &&
+        currentRange.from &&
+        currentRange.fromDay !== null
+      ) {
         const isIncreasingTimeRange: boolean =
           //@ts-ignore
           DAY_IN_SEC * (currentRange.fromDay + 1) + currentRange.from <
@@ -139,7 +104,10 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
           currentRange.to + DAY_IN_SEC * (currentRange.toDay + 1);
 
         if (isIncreasingTimeRange) {
-          result.push({ ...currentRange } as TimeRange);
+          let timeRangeInWeekKey = getTimeRangeMapKey(currentRange.fromDay, currentRange.from)
+            currentRange.fromDay * DAY_IN_SEC + currentRange.from;
+
+          result.set(timeRangeInWeekKey, { ...currentRange } as TimeRange);
 
           currentRange = {
             from: null,
@@ -154,8 +122,14 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
     // SUN - MON loop only
     // to avoid single day looping onto itself
     // or MON - WED ranges
-    if (loopRange.toDay === 0 && currentRange.fromDay === 6) {
-      result.push({
+    if (
+      loopRange.toDay === 0 &&
+      currentRange.from !== null &&
+      currentRange.fromDay === 6
+    ) {
+      let timeRangeInWeekKey = getTimeRangeMapKey(currentRange.fromDay, currentRange.from)
+
+      result.set(timeRangeInWeekKey, {
         to: loopRange.to,
         toDay: loopRange.toDay,
         from: currentRange.from,
@@ -165,6 +139,71 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
   }
 
   return result;
+}
+
+function getTimeRangeMapKey(day: WeekDayIndex, time: DayTime){
+    return day * DAY_IN_SEC + time
+}
+
+function joinSequentialRanges(data:TimeRangeMap): TimeRangeMap {
+    for (let [firstRangeKey, firstRange] of data.entries()) {
+        while(true){
+            const secondRangeKey = getTimeRangeMapKey(firstRange.toDay, firstRange.to);
+            const secondRange = data.get(secondRangeKey)
+
+            if(!secondRange){
+                break;
+            }
+
+            firstRange =  {
+                ...firstRange,
+                to: secondRange.to,
+                toDay: secondRange.toDay,
+            }
+
+            data.set(firstRangeKey, firstRange)
+            data.delete(secondRangeKey)
+        }
+    }
+
+    return data;
+}
+
+function aggregateTimeRangesByWeekDay(
+  data: TimeRangeMap
+): Map<WeekDay, FormattedTimeRange[]> {
+  const dayMap: Map<WeekDay, FormattedTimeRange[]> = new Map();
+
+  for (const [, row] of data.entries()) {
+    let dayKey = row.fromDay;
+    let weekday = weekdays[dayKey];
+    let timeRanges = dayMap.get(weekday);
+
+    if (!timeRanges) {
+      timeRanges = [];
+    }
+
+    // todo needs improvement for multiple day ranges
+    timeRanges.push(`${formatTime(row.from)} - ${formatTime(row.to)}`);
+
+    dayMap.set(weekday, timeRanges);
+  }
+
+  return dayMap;
+}
+
+function printWeekDayTimeMap(data: Map<WeekDay, FormattedTimeRange[]>): string {
+  const result = [];
+
+  for (let weekday of weekdays) {
+    const outputDay: string =
+      weekday.charAt(0).toUpperCase() + weekday.slice(1);
+    let times = data.get(weekday);
+
+    result.push(`${outputDay}: ${times ? times.join(", ") : "Closed"}`);
+  }
+
+  return result.join("\n");
 }
 
 const weekdays: WeekDay[] = [
@@ -179,19 +218,24 @@ const weekdays: WeekDay[] = [
 
 // types
 type TimeRangeTemporary = {
-  from: number | null;
-  to: number | null;
-  fromDay: number | null;
-  toDay: number | null;
+  from: DayTime | null;
+  to: DayTime | null;
+  fromDay: WeekDayIndex | null;
+  toDay: WeekDayIndex | null;
 };
 
-type FormattedTimeRange = string;
+type FormattedTimeRange = string; // ex. 1 AM - 4 AM
+type DayTime = number; // min 0, max DAY_IN_SEC
+type WeekStartTime = number; //WeekDayIndex * DayTime
+
+type TimeRangeMap = Map<WeekStartTime, TimeRange>;
 
 type TimeRange = {
-  from: number;
-  to: number;
-  fromDay: number;
-  toDay: number;
+  from: DayTime;
+  to: DayTime;
+
+  fromDay: WeekDayIndex;
+  toDay: WeekDayIndex;
 };
 
 type TimeRangePartial = {
@@ -199,6 +243,7 @@ type TimeRangePartial = {
   value: number;
 };
 
+type WeekDayIndex = number; // 0-6
 type WeekDay =
   | "monday"
   | "tuesday"
