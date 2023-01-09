@@ -325,34 +325,26 @@ Sunday: 11 PM - 10 AM`
 });
 
 describe("error cases", () => {
-  it("Invalid JSON should return all days closed", () => {
-    const result = parse("{", logger);
-
-    expect(logger.error).toHaveBeenCalled();
-    expect(result).toEqual(
-      `Monday: Closed
+  const allClosed = `Monday: Closed
 Tuesday: Closed
 Wednesday: Closed
 Thursday: Closed
 Friday: Closed
 Saturday: Closed
-Sunday: Closed`
-    );
+Sunday: Closed`;
+
+  it("Invalid JSON should return all days closed", () => {
+    const result = parse("{", logger);
+
+    expect(logger.error).toHaveBeenCalled();
+    expect(result).toEqual(allClosed);
   });
 
   it("Empty string should return all days closed", () => {
     const result = parse("", logger);
 
     expect(logger.error).toHaveBeenCalled();
-    expect(result).toEqual(
-      `Monday: Closed
-Tuesday: Closed
-Wednesday: Closed
-Thursday: Closed
-Friday: Closed
-Saturday: Closed
-Sunday: Closed`
-    );
+    expect(result).toEqual(allClosed);
   });
 
   it("Empty object should return all days closed", () => {
@@ -368,6 +360,64 @@ Friday: Closed
 Saturday: Closed
 Sunday: Closed`
     );
+  });
+
+  it("Day without close time, should return all days closed", () => {
+    const result = parse(JSON.stringify({
+      monday: [
+        {
+          type: "open",
+          value: 32400,
+        },
+      ],
+    }), logger);
+    expect(logger.error).not.toHaveBeenCalled();
+
+    expect(result).toEqual(allClosed);
+  });
+
+  it("Day without close time, should return all days closed", () => {
+    const result = parse(JSON.stringify({
+      monday: [
+        {
+          type: "open",
+          value: 32400,
+        },
+      ],
+    }), logger);
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(result).toEqual(allClosed);
+  });
+
+  it("Day without open time, should return all days closed", () => {
+    const result = parse(JSON.stringify({
+      monday: [
+        {
+          type: "close",
+          value: 32400,
+        },
+      ],
+    }), logger);
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(result).toEqual(allClosed);
+  });
+
+
+  it("Day with negative open time or overflow time returns all days closed", () => {
+    const result = parse(JSON.stringify({
+      monday: [
+        {
+          type: "open",
+          value: -1000,
+        },
+        {
+          type: "close",
+          value: Number.MAX_VALUE,
+        },
+      ],
+    }), logger);
+    expect(logger.error).not.toHaveBeenCalled();
+    expect(result).toEqual(allClosed);
   });
 });
 

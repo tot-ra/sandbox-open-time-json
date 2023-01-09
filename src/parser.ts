@@ -14,15 +14,16 @@ export default function parse(txt: unknown, logger: FastifyBaseLogger): string {
 
   return printWeekDayTimeMap(
     aggregateTimeRangesByWeekDay(
-        joinSequentialRanges(
-            extractUniqueLoopableTimeRanges(
-                sortInput(rows as OpenDaysHierarchy))
+      joinSequentialRanges(
+        extractUniqueLoopableTimeRanges(
+          sortAndFilterInput(rows as OpenDaysHierarchy)
         )
+      )
     )
   );
 }
 
-function sortInput(data: OpenDaysHierarchy): OpenDaysHierarchy {
+function sortAndFilterInput(data: OpenDaysHierarchy): OpenDaysHierarchy {
   for (let weekday of weekdays) {
     let openHoursParts: TimeRangePartial[] = data[weekday];
     // empty input - skip a row
@@ -30,7 +31,16 @@ function sortInput(data: OpenDaysHierarchy): OpenDaysHierarchy {
       continue;
     }
     // sort open/close time in case its not sorted properly
-    openHoursParts.sort((a, b) => a.value - b.value);
+    data[weekday].sort((a, b) => a.value - b.value);
+
+    for (let key = 0; key < openHoursParts.length; key++) {
+      let row = openHoursParts[key];
+      if (row.value < 0 || row.value >= DAY_IN_SEC) {
+        delete openHoursParts[key];
+      }
+    }
+
+    data[weekday] = openHoursParts;
   }
 
   return data;
@@ -55,7 +65,7 @@ function extractUniqueLoopableTimeRanges(
     toDay: null,
   };
 
-  for (let dayKey:WeekDayIndex = 0; dayKey < weekdays.length; dayKey++) {
+  for (let dayKey: WeekDayIndex = 0; dayKey < weekdays.length; dayKey++) {
     const weekday = weekdays[dayKey];
     let openHoursParts: TimeRangePartial[] = data[weekday];
 
@@ -104,8 +114,11 @@ function extractUniqueLoopableTimeRanges(
           currentRange.to + DAY_IN_SEC * (currentRange.toDay + 1);
 
         if (isIncreasingTimeRange) {
-          let timeRangeInWeekKey = getTimeRangeMapKey(currentRange.fromDay, currentRange.from)
-            currentRange.fromDay * DAY_IN_SEC + currentRange.from;
+          let timeRangeInWeekKey = getTimeRangeMapKey(
+            currentRange.fromDay,
+            currentRange.from
+          );
+          currentRange.fromDay * DAY_IN_SEC + currentRange.from;
 
           result.set(timeRangeInWeekKey, { ...currentRange } as TimeRange);
 
@@ -127,7 +140,10 @@ function extractUniqueLoopableTimeRanges(
       currentRange.from !== null &&
       currentRange.fromDay === 6
     ) {
-      let timeRangeInWeekKey = getTimeRangeMapKey(currentRange.fromDay, currentRange.from)
+      let timeRangeInWeekKey = getTimeRangeMapKey(
+        currentRange.fromDay,
+        currentRange.from
+      );
 
       result.set(timeRangeInWeekKey, {
         to: loopRange.to,
@@ -141,32 +157,35 @@ function extractUniqueLoopableTimeRanges(
   return result;
 }
 
-function getTimeRangeMapKey(day: WeekDayIndex, time: DayTime){
-    return day * DAY_IN_SEC + time
+function getTimeRangeMapKey(day: WeekDayIndex, time: DayTime) {
+  return day * DAY_IN_SEC + time;
 }
 
-function joinSequentialRanges(data:TimeRangeMap): TimeRangeMap {
-    for (let [firstRangeKey, firstRange] of data.entries()) {
-        while(true){
-            const secondRangeKey = getTimeRangeMapKey(firstRange.toDay, firstRange.to);
-            const secondRange = data.get(secondRangeKey)
+function joinSequentialRanges(data: TimeRangeMap): TimeRangeMap {
+  for (let [firstRangeKey, firstRange] of data.entries()) {
+    while (true) {
+      const secondRangeKey = getTimeRangeMapKey(
+        firstRange.toDay,
+        firstRange.to
+      );
+      const secondRange = data.get(secondRangeKey);
 
-            if(!secondRange){
-                break;
-            }
+      if (!secondRange) {
+        break;
+      }
 
-            firstRange =  {
-                ...firstRange,
-                to: secondRange.to,
-                toDay: secondRange.toDay,
-            }
+      firstRange = {
+        ...firstRange,
+        to: secondRange.to,
+        toDay: secondRange.toDay,
+      };
 
-            data.set(firstRangeKey, firstRange)
-            data.delete(secondRangeKey)
-        }
+      data.set(firstRangeKey, firstRange);
+      data.delete(secondRangeKey);
     }
+  }
 
-    return data;
+  return data;
 }
 
 function aggregateTimeRangesByWeekDay(
