@@ -16,6 +16,14 @@ docker-compose up
 curl -X POST -H "Content-Type: application/json" -d '{"monday": [{"type": "open", "value": 32400},{"type": "close","value": 37800}]}' http://localhost:1234/availability
 ```
 
+### Thoughts on data format
+*JSON* format seems ok if we're talking about data exchange format with current REST APIs.
+
+Possible improvements could
+- use *binary* ArrayBuffer where 1 second = 1 bit. This would mean that a week interval of 7*24*60*60 seconds as bits could be encoded as a 75.6 KB payload, which could be scanned in a single pass-through operation to generate human-readable format. This would be useful if we want process to use predictable (low) amount of fixed memory per request, because JSON solution with payload that has too many time intervals is not so performant.
+- add more strictness with schema to ensure that keys match and that validation is simpler. For example GraphQL mutations could enforce input format, so that we don't need to manually check presense of open/close types. A [JSON schema range types](https://json-schema.org/understanding-json-schema/reference/numeric.html#range) could enforce min/max value...
+- add more specific error handling API contract. Currently implemented REST API ignores invalid data structures, because customer is not clear. Because of that, architecture choice of simplicity and resiliency was done, over transparency with feedback. If for some reason we need to stop client with invalid input or notify him, we would either need to throw error or gather them into separate datastructure and have a way to notify him - 400 HTTP status + custom response. Current requirements do not allow custom error response, as its text-based. Optionally, we could pass fastify error logger to detect such cases and have alerting.
+
 ## Architecture
 
 ```mermaid
@@ -23,33 +31,20 @@ flowchart LR
     client --"POST /availability\nJSON" --> sandbox-open-time-json("sandbox-open-time-json\n0.0.0.0:1234")
 ```
 
+
 ### Tech stack
 
 - nodejs 16
 - typescript
 - fastify
 
-## Development
 
-```
-npm run dev
-```
+## API
+<details><summary><h3>🟡 POST /availability</h3></summary>
 
-## Testing
+Convert open-hours for restoraunt availability from JSON to human-readable format.
 
-```
-npm run test:unit
-npm run test:functional
-```
-
-# Requirements
-
-## In short
-
-Your task is to write an endpoint that accepts JSON-formatted opening hours of a
-restaurant as an input and returns the rendered human readable format as a text output.
-
-## Input data
+##### Request params (raw body)
 
 Input JSON consists of keys indicating days of a week and corresponding opening hours
 as values. One JSON file includes data for one restaurant.
@@ -83,6 +78,31 @@ Example: on Mondays a restaurant is open from 9 AM to 8 PM
 ….
 }
 ```
+</details>
+
+
+
+
+## Development
+
+```
+npm run dev
+```
+
+## Testing
+
+```
+npm run test:unit
+npm run test:functional
+```
+
+# Requirements
+
+## In short
+
+Your task is to write an endpoint that accepts JSON-formatted opening hours of a
+restaurant as an input and returns the rendered human readable format as a text output.
+
 
 ### Special cases
 
