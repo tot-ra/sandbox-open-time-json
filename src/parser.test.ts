@@ -115,76 +115,6 @@ Sunday: Closed`
   );
 });
 
-it("requirements full example", () => {
-  const result = parse(
-    JSON.stringify({
-      monday: [],
-      tuesday: [
-        {
-          type: "open",
-          value: 36000,
-        },
-        {
-          type: "close",
-          value: 64800,
-        },
-      ],
-      wednesday: [],
-      thursday: [
-        {
-          type: "open",
-          value: 37800,
-        },
-        {
-          type: "close",
-          value: 64800,
-        },
-      ],
-      friday: [
-        {
-          type: "open",
-          value: 36000,
-        },
-      ],
-      saturday: [
-        {
-          type: "close",
-          value: 3600,
-        },
-        {
-          type: "open",
-          value: 36000,
-        },
-      ],
-      sunday: [
-        {
-          type: "close",
-          value: 3600,
-        },
-        {
-          type: "open",
-          value: 43200,
-        },
-        {
-          type: "close",
-          value: 75600,
-        },
-      ],
-    }),
-    logger
-  );
-
-  expect(result).toEqual(
-    `Monday: Closed
-Tuesday: 10 AM - 6 PM
-Wednesday: Closed
-Thursday: 10:30 AM - 6 PM
-Friday: 10 AM - 1 AM
-Saturday: 10 AM - 1 AM
-Sunday: 12 PM - 9 PM`
-  );
-});
-
 describe("logical edge cases", () => {
   it("Reverse order close->open time should be valid, as long as time is increasing", () => {
     const result = parse(
@@ -442,6 +372,79 @@ Sunday: Closed`
 });
 
 describe("performance", () => {
+  it("requirements full example should run in under 10 ms", () => {
+    const [result, elapsedTimeMs] = measureTime(() =>
+      parse(
+        JSON.stringify({
+          monday: [],
+          tuesday: [
+            {
+              type: "open",
+              value: 36000,
+            },
+            {
+              type: "close",
+              value: 64800,
+            },
+          ],
+          wednesday: [],
+          thursday: [
+            {
+              type: "open",
+              value: 37800,
+            },
+            {
+              type: "close",
+              value: 64800,
+            },
+          ],
+          friday: [
+            {
+              type: "open",
+              value: 36000,
+            },
+          ],
+          saturday: [
+            {
+              type: "close",
+              value: 3600,
+            },
+            {
+              type: "open",
+              value: 36000,
+            },
+          ],
+          sunday: [
+            {
+              type: "close",
+              value: 3600,
+            },
+            {
+              type: "open",
+              value: 43200,
+            },
+            {
+              type: "close",
+              value: 75600,
+            },
+          ],
+        }),
+        logger
+      )
+    );
+
+    expect(elapsedTimeMs).toBeLessThan(10);
+    expect(result).toEqual(
+      `Monday: Closed
+Tuesday: 10 AM - 6 PM
+Wednesday: Closed
+Thursday: 10:30 AM - 6 PM
+Friday: 10 AM - 1 AM
+Saturday: 10 AM - 1 AM
+Sunday: 12 PM - 9 PM`
+    );
+  });
+
   it("processes and returns a second-long ranges for entire week in under 2 sec", () => {
     const freakyDay: any = [];
 
