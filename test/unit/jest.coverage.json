@@ -4,18 +4,16 @@
   "restoreMocks": true,
   "maxWorkers": 1,
   "transform": {
-    "^.+\\.(ts)$": ["ts-jest", {
-      "tsconfig": "<rootDir>/test/tsconfig.test.json"
-    }]
+    "^.+\\.(ts)$": [
+      "ts-jest",
+      {
+        "tsconfig": "<rootDir>/test/tsconfig.test.json"
+      }
+    ]
   },
-  "testMatch": [
-    "<rootDir>/src/**/*.test.(ts|js)"
-  ],
+  "testMatch": ["<rootDir>/src/**/*.test.(ts|js)"],
   "coverageDirectory": "coverage",
   "coverageReporters": ["text", "json", "lcov", "clover"],
   "collectCoverage": true,
-  "collectCoverageFrom": [
-    "<rootDir>/src/**/*.ts", 
-    "!<rootDir>/src/*/*.test.ts"
-  ]
+  "collectCoverageFrom": ["<rootDir>/src/**/*.ts", "!<rootDir>/src/*/*.test.ts"]
 }

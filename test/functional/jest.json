@@ -1,12 +1,13 @@
 {
   "rootDir": "../../",
   "transform": {
-    "^.+\\.(ts)$": ["ts-jest",{
-      "tsconfig": "<rootDir>/test/tsconfig.test.json"
-    }]
+    "^.+\\.(ts)$": [
+      "ts-jest",
+      {
+        "tsconfig": "<rootDir>/test/tsconfig.test.json"
+      }
+    ]
   },
   "maxWorkers": 1,
-  "testMatch": [
-    "<rootDir>/**/test/**/*.test.(ts|js)"
-  ]
+  "testMatch": ["<rootDir>/**/test/**/*.test.(ts|js)"]
 }

@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   sandbox-open-time-json:
     image: node:16-alpine

@@ -1,5 +1,5 @@
 import axios from "axios";
-import 'jest';
+import "jest";
 
 describe("POST http://localhost:1234/availability", () => {
   it("should return 200 http status", async () => {

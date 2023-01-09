@@ -36,7 +36,7 @@ export default function parse(rows: unknown): string {
 
 function sortAndFilterInput(data: OpenDaysHierarchy): OpenDaysHierarchy {
   weekdays.forEach((weekday) => {
-    let openHoursParts: TimeRangePartial[] = data[weekday];
+    const openHoursParts: TimeRangePartial[] = data[weekday];
     // empty input - skip a row
     if (!openHoursParts || Object.keys(openHoursParts).length === 0) {
       return;
@@ -47,7 +47,7 @@ function sortAndFilterInput(data: OpenDaysHierarchy): OpenDaysHierarchy {
     // don't use .filter in case data is too large
     // no need to create new copy, cleanup existing structure
     for (let key = 0; key < openHoursParts.length; key++) {
-      let row = openHoursParts[key];
+      const row = openHoursParts[key];
       if (row.value < 0 || row.value >= DAY_IN_SEC) {
         delete openHoursParts[key];
       }
@@ -80,7 +80,7 @@ function extractUniqueLoopableTimeRanges(
 
   for (let dayKey: WeekDayIndex = 0; dayKey < weekdays.length; dayKey++) {
     const weekday = weekdays[dayKey];
-    let openHoursParts: TimeRangePartial[] = data[weekday];
+    const openHoursParts: TimeRangePartial[] = data[weekday];
 
     // empty input - skip a row
     if (!openHoursParts || Object.keys(openHoursParts).length === 0) {
@@ -126,7 +126,7 @@ function extractUniqueLoopableTimeRanges(
           currentRange.to + DAY_IN_SEC * (currentRange.toDay + 1);
 
         if (isIncreasingTimeRange) {
-          let timeRangeInWeekKey = getTimeRangeMapKey(
+          const timeRangeInWeekKey = getTimeRangeMapKey(
             currentRange.fromDay,
             currentRange.from
           );
@@ -152,7 +152,7 @@ function extractUniqueLoopableTimeRanges(
       currentRange.from !== null &&
       currentRange.fromDay === 6
     ) {
-      let timeRangeInWeekKey = getTimeRangeMapKey(
+      const timeRangeInWeekKey = getTimeRangeMapKey(
         currentRange.fromDay,
         currentRange.from
       );
@@ -174,7 +174,9 @@ function getTimeRangeMapKey(day: WeekDayIndex, time: DayTime) {
 }
 
 function joinSequentialRanges(data: TimeRangeMap): TimeRangeMap {
+  // eslint-disable-next-line
   for (let [firstRangeKey, firstRange] of data.entries()) {
+    // eslint-disable-next-line
     while (true) {
       const secondRangeKey = getTimeRangeMapKey(
         firstRange.toDay,
@@ -206,8 +208,8 @@ function aggregateTimeRangesByWeekDay(
   const dayMap: Map<WeekDay, FormattedTimeRange[]> = new Map();
 
   for (const [, row] of data.entries()) {
-    let dayKey = row.fromDay;
-    let weekday = weekdays[dayKey];
+    const dayKey = row.fromDay;
+    const weekday = weekdays[dayKey];
     let timeRanges = dayMap.get(weekday);
 
     if (!timeRanges) {
@@ -225,10 +227,10 @@ function aggregateTimeRangesByWeekDay(
 function printWeekDayTimeMap(data: Map<WeekDay, FormattedTimeRange[]>): string {
   const result = [];
 
-  for (let weekday of weekdays) {
+  for (const weekday of weekdays) {
     const outputDay: string =
       weekday.charAt(0).toUpperCase() + weekday.slice(1);
-    let times = data.get(weekday);
+    const times = data.get(weekday);
 
     result.push(`${outputDay}: ${times ? times.join(", ") : "Closed"}`);
   }
