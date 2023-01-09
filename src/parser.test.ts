@@ -186,6 +186,21 @@ Sunday: 12 PM - 9 PM`
 });
 
 describe("edge cases", () => {
+  it("Invalid JSON should return all days closed", () => {
+    const result = parse("{", logger);
+
+    expect(logger.error).toHaveBeenCalled();
+    expect(result).toEqual(
+      `Monday: Closed
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: Closed`
+    );
+  });
+
   it("Empty string should return all days closed", () => {
     const result = parse("", logger);
 
