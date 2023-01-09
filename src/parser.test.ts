@@ -185,52 +185,7 @@ Sunday: 12 PM - 9 PM`
   );
 });
 
-describe("edge cases", () => {
-  it("Invalid JSON should return all days closed", () => {
-    const result = parse("{", logger);
-
-    expect(logger.error).toHaveBeenCalled();
-    expect(result).toEqual(
-      `Monday: Closed
-Tuesday: Closed
-Wednesday: Closed
-Thursday: Closed
-Friday: Closed
-Saturday: Closed
-Sunday: Closed`
-    );
-  });
-
-  it("Empty string should return all days closed", () => {
-    const result = parse("", logger);
-
-    expect(logger.error).toHaveBeenCalled();
-    expect(result).toEqual(
-      `Monday: Closed
-Tuesday: Closed
-Wednesday: Closed
-Thursday: Closed
-Friday: Closed
-Saturday: Closed
-Sunday: Closed`
-    );
-  });
-
-  it("Empty object should return all days closed", () => {
-    const result = parse(JSON.stringify({}), logger);
-    expect(logger.error).not.toHaveBeenCalled();
-
-    expect(result).toEqual(
-      `Monday: Closed
-Tuesday: Closed
-Wednesday: Closed
-Thursday: Closed
-Friday: Closed
-Saturday: Closed
-Sunday: Closed`
-    );
-  });
-
+describe("logical edge cases", () => {
   it("Reverse order close->open time should be valid, as long as time is increasing", () => {
     const result = parse(
       JSON.stringify({
@@ -250,6 +205,42 @@ Sunday: Closed`
 
     expect(result).toEqual(
       `Monday: 9 AM - 10:30 AM
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: Closed`
+    );
+  });
+
+  it("Reverse order close->open, multiple values", () => {
+    const result = parse(
+      JSON.stringify({
+        monday: [
+          {
+            type: "close",
+            value: 4*60*60,
+          },
+          {
+            type: "close",
+            value: 2*60*60,
+          },
+          {
+            type: "open",
+            value: 1*60*60,
+          },
+          {
+            type: "open",
+            value: 3*60*60,
+          },
+        ],
+      }),
+      logger
+    );
+
+    expect(result).toEqual(
+      `Monday: 1 AM - 2 AM, 3 AM - 4 AM
 Tuesday: Closed
 Wednesday: Closed
 Thursday: Closed
@@ -326,4 +317,51 @@ Saturday: Closed
 Sunday: 11 PM - 10 AM`
   );
   })
+});
+
+describe("error cases", () => {
+  it("Invalid JSON should return all days closed", () => {
+    const result = parse("{", logger);
+
+    expect(logger.error).toHaveBeenCalled();
+    expect(result).toEqual(
+      `Monday: Closed
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: Closed`
+    );
+  });
+
+  it("Empty string should return all days closed", () => {
+    const result = parse("", logger);
+
+    expect(logger.error).toHaveBeenCalled();
+    expect(result).toEqual(
+      `Monday: Closed
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: Closed`
+    );
+  });
+
+  it("Empty object should return all days closed", () => {
+    const result = parse(JSON.stringify({}), logger);
+    expect(logger.error).not.toHaveBeenCalled();
+
+    expect(result).toEqual(
+      `Monday: Closed
+Tuesday: Closed
+Wednesday: Closed
+Thursday: Closed
+Friday: Closed
+Saturday: Closed
+Sunday: Closed`
+    );
+  });
 });

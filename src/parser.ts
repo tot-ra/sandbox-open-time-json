@@ -80,6 +80,9 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
       continue;
     }
 
+    // sort open/close time in case its not sorted properly
+    openHoursParts.sort((a, b) => a.value - b.value);
+
     for (const rangePart of openHoursParts) {
       if (rangePart.type === "open") {
         currentRange = {
@@ -128,7 +131,10 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
       }
     }
 
-    if (loopRange.to !== null && currentRange.from !== null) {
+    // SUN - MON loop only 
+    // to avoid single day looping onto itself
+    // or MON - WED ranges
+    if (loopRange.toDay === 0 && currentRange.fromDay === 6) {
       result.push({
         to: loopRange.to,
         toDay: loopRange.toDay,
