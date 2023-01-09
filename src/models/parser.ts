@@ -1,7 +1,26 @@
-import { FastifyBaseLogger } from "fastify";
 import { formatTime } from "./formatTime";
+import {
+  OpenDaysHierarchy,
+  TimeRangePartial,
+  TimeRangeMap,
+  TimeRangeTemporary,
+  WeekDayIndex,
+  TimeRange,
+  DayTime,
+  WeekDay,
+  FormattedTimeRange,
+} from "./types";
 
 const DAY_IN_SEC = 24 * 60 * 60;
+const weekdays: WeekDay[] = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
 
 export default function parse(rows: unknown): string {
   return printWeekDayTimeMap(
@@ -16,7 +35,7 @@ export default function parse(rows: unknown): string {
 }
 
 function sortAndFilterInput(data: OpenDaysHierarchy): OpenDaysHierarchy {
-  weekdays.forEach(weekday => {
+  weekdays.forEach((weekday) => {
     let openHoursParts: TimeRangePartial[] = data[weekday];
     // empty input - skip a row
     if (!openHoursParts || Object.keys(openHoursParts).length === 0) {
@@ -99,12 +118,11 @@ function extractUniqueLoopableTimeRanges(
       if (
         currentRange.to &&
         currentRange.from &&
-        currentRange.fromDay !== null
+        currentRange.fromDay !== null &&
+        currentRange.toDay !== null
       ) {
         const isIncreasingTimeRange: boolean =
-          //@ts-ignore
           DAY_IN_SEC * (currentRange.fromDay + 1) + currentRange.from <
-          //@ts-ignore
           currentRange.to + DAY_IN_SEC * (currentRange.toDay + 1);
 
         if (isIncreasingTimeRange) {
@@ -196,7 +214,6 @@ function aggregateTimeRangesByWeekDay(
       timeRanges = [];
     }
 
-    // todo needs improvement for multiple day ranges
     timeRanges.push(`${formatTime(row.from)} - ${formatTime(row.to)}`);
 
     dayMap.set(weekday, timeRanges);
@@ -218,54 +235,3 @@ function printWeekDayTimeMap(data: Map<WeekDay, FormattedTimeRange[]>): string {
 
   return result.join("\n");
 }
-
-const weekdays: WeekDay[] = [
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-  "sunday",
-];
-
-// types
-type TimeRangeTemporary = {
-  from: DayTime | null;
-  to: DayTime | null;
-  fromDay: WeekDayIndex | null;
-  toDay: WeekDayIndex | null;
-};
-
-type FormattedTimeRange = string; // ex. 1 AM - 4 AM
-type DayTime = number; // min 0, max DAY_IN_SEC
-type WeekStartTime = number; //WeekDayIndex * DayTime
-
-type TimeRangeMap = Map<WeekStartTime, TimeRange>;
-
-type TimeRange = {
-  from: DayTime;
-  to: DayTime;
-
-  fromDay: WeekDayIndex;
-  toDay: WeekDayIndex;
-};
-
-type TimeRangePartial = {
-  type: "open" | "close";
-  value: number;
-};
-
-type WeekDayIndex = number; // 0-6
-type WeekDay =
-  | "monday"
-  | "tuesday"
-  | "wednesday"
-  | "thursday"
-  | "friday"
-  | "saturday"
-  | "sunday";
-
-type OpenDaysHierarchy = {
-  [key in WeekDay]: TimeRangePartial[];
-};
