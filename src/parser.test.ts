@@ -220,19 +220,19 @@ Sunday: Closed`
         monday: [
           {
             type: "close",
-            value: 4*60*60,
+            value: 4 * 60 * 60,
           },
           {
             type: "close",
-            value: 2*60*60,
+            value: 2 * 60 * 60,
           },
           {
             type: "open",
-            value: 1*60*60,
+            value: 1 * 60 * 60,
           },
           {
             type: "open",
-            value: 3*60*60,
+            value: 3 * 60 * 60,
           },
         ],
       }),
@@ -256,15 +256,15 @@ Sunday: Closed`
         monday: [
           {
             type: "close",
-            value: 2*60*60,
+            value: 2 * 60 * 60,
           },
           {
             type: "open",
-            value: 1*60*60,
+            value: 1 * 60 * 60,
           },
           {
             type: "open",
-            value: 1*60*60,
+            value: 1 * 60 * 60,
           },
         ],
       }),
@@ -288,27 +288,27 @@ Sunday: Closed`
         monday: [
           {
             type: "open",
-            value: 1*60*60,
+            value: 1 * 60 * 60,
           },
           {
             type: "close",
-            value: 2*60*60,
+            value: 2 * 60 * 60,
           },
           {
             type: "open",
-            value: 2*60*60,
+            value: 2 * 60 * 60,
           },
           {
             type: "close",
-            value: 3*60*60,
+            value: 3 * 60 * 60,
           },
           {
             type: "open",
-            value: 3*60*60,
+            value: 3 * 60 * 60,
           },
           {
             type: "close",
-            value: 4*60*60,
+            value: 4 * 60 * 60,
           },
         ],
       }),
@@ -354,45 +354,44 @@ Sunday: Closed`
     );
   });
 
-  it('Week loop',()=>{
+  it("Week loop", () => {
     const result = parse(
       JSON.stringify({
         monday: [
           {
             type: "close",
-            value: 10*60*60,
+            value: 10 * 60 * 60,
           },
-
 
           {
             type: "open",
-            value: 18*60*60,
+            value: 18 * 60 * 60,
           },
           {
             type: "close",
-            value: 19*60*60,
+            value: 19 * 60 * 60,
           },
         ],
         sunday: [
           {
             type: "open",
-            value: 23*60*60,
+            value: 23 * 60 * 60,
           },
-        ]
+        ],
       }),
       logger
     );
-  
+
     expect(result).toEqual(
-    `Monday: 6 PM - 7 PM
+      `Monday: 6 PM - 7 PM
 Tuesday: Closed
 Wednesday: Closed
 Thursday: Closed
 Friday: Closed
 Saturday: Closed
 Sunday: 11 PM - 10 AM`
-  );
-  })
+    );
+  });
 });
 
 describe("error cases", () => {
@@ -441,3 +440,50 @@ Sunday: Closed`
     );
   });
 });
+
+describe("performance", () => {
+  it("processes and returns a second-long ranges for entire week in under 2 sec", () => {
+    const freakyDay: any = [];
+
+    for (let i = 0; i < 24 * 60 * 60; i = i + 2) {
+      freakyDay.push({
+        type: "open",
+        value: i,
+      });
+      freakyDay.push({
+        type: "close",
+        value: i + 1,
+      });
+    }
+
+    const [result, elapsedTimeMs] = measureTime(() =>
+      parse(
+        JSON.stringify({
+          monday: freakyDay,
+          tuesday: freakyDay,
+          wednesday: freakyDay,
+          thursday: freakyDay,
+          friday: freakyDay,
+          saturday: freakyDay,
+          sunday: freakyDay,
+        }),
+        logger
+      )
+    );
+
+    expect(elapsedTimeMs).toBeLessThan(2000);
+    expect(result).toContain("Monday");
+    expect(result).toContain("Sunday");
+    expect(result).toContain("11:29:58 PM - 11:29:59 PM");
+    expect(result.length).toBeGreaterThan(1000);
+  });
+});
+
+function measureTime<T>(func: () => T): [T, number] {
+  const startTime = performance.now();
+  const result = func();
+  const endTime = performance.now();
+  const elapsedTime = endTime - startTime;
+
+  return [result, elapsedTime];
+}
