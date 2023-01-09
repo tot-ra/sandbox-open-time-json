@@ -13,7 +13,13 @@ export default function parse(txt: unknown, logger: FastifyBaseLogger): string {
   }
 
   return printWeekDayTimeMap(
-    aggregateTimeRangesByWeekDay(extractTimeRanges(rows as OpenDaysHierarchy))
+    aggregateTimeRangesByWeekDay(
+        extractTimeRanges(
+            sortInputHierarchy(
+                rows as OpenDaysHierarchy
+            )
+        )
+    )
   );
 }
 
@@ -54,6 +60,20 @@ function aggregateTimeRangesByWeekDay(
   return dayMap;
 }
 
+function sortInputHierarchy(data: OpenDaysHierarchy): OpenDaysHierarchy {
+  for (let weekday of weekdays) {
+    let openHoursParts: TimeRangePartial[] = data[weekday];
+    // empty input - skip a row
+    if (!openHoursParts || Object.keys(openHoursParts).length === 0) {
+      continue;
+    }
+    // sort open/close time in case its not sorted properly
+    openHoursParts.sort((a, b) => a.value - b.value);
+  }
+
+  return data;
+}
+
 function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
   const result: TimeRange[] = [];
   let currentRange: TimeRangeTemporary = {
@@ -73,7 +93,7 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
 
   for (let dayKey = 0; dayKey < weekdays.length; dayKey++) {
     const weekday = weekdays[dayKey];
-    const openHoursParts: TimeRangePartial[] = data[weekday];
+    let openHoursParts: TimeRangePartial[] = data[weekday];
 
     // empty input - skip a row
     if (!openHoursParts || Object.keys(openHoursParts).length === 0) {
@@ -101,12 +121,12 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
 
         // if first day of the week starts with close date
         // most likely there is a loop
-        if (result.length === 0 && currentRange.from ===null) {
+        if (result.length === 0 && currentRange.from === null) {
           loopRange = {
             to: rangePart.value,
             toDay: dayKey,
             from: null,
-            fromDay: null
+            fromDay: null,
           };
         }
       }
@@ -131,7 +151,7 @@ function extractTimeRanges(data: OpenDaysHierarchy): TimeRange[] {
       }
     }
 
-    // SUN - MON loop only 
+    // SUN - MON loop only
     // to avoid single day looping onto itself
     // or MON - WED ranges
     if (loopRange.toDay === 0 && currentRange.fromDay === 6) {
